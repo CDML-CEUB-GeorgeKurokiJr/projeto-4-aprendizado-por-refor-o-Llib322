@@ -1,0 +1,30 @@
+# Relatório Provisório de Pesquisa: DCGAN e o Equilíbrio Minimax
+**Projeto 4 - Aprendizado Não Supervisionado e Redes Adversárias**
+
+## 1. Introdução
+A presente pesquisa documenta o desenvolvimento empírico de uma DCGAN projetada para gerar rostos alinhados a partir do dataset *Anime Faces* (63.632 imagens em 64x64 RGB). O desenvolvimento foi pautado pela análise da Função de Perda (BCELoss) e sua tradução no aspecto qualitativo (nitidez dos pixels), testando hipóteses para evitar o esmagamento dos gradientes do Gerador.
+
+## 2. Histórico de Experimentos e Ablações
+
+### Experimento 1: O Teste de 100 Épocas (Baseline)
+* **Status Numérico:** O Discriminador dominou rapidamente, atingindo mais de 90% de confiança, limitando as taxas de acerto do Gerador a menos de 2%.
+* **Veredito Visual:** Apesar do massacre matemático, as imagens finais mostraram a formação incipiente de anatomia facial coerente. 
+* **Conclusão:** O "Paradoxo da Loss" se provou verdadeiro. O Gerador conseguiu extrair aprendizado dos micro-gradientes.
+
+### Experimento 2: A Armadilha das 350 Épocas e Smoothing Duplo
+* **Hipótese:** Aumentar o treinamento para 350 épocas e suavizar os rótulos (*Label Smoothing* em 0.9).
+* **O Erro Teórico:** O alvo do Gerador foi erroneamente ajustado para 0.9. O Gerador percebeu que imagens hiper-saturadas e distorcidas mantinham o Discriminador exatamente com 10% de dúvida.
+* **Veredito Visual:** Colapso de Modo severo (*Mode Collapse*). As imagens tornaram-se monstruosidades abstratas e estouradas.
+
+### Experimento 3: Label Flipping e a Perda de Sharpness (75 Épocas)
+* **Hipótese:** Injetar ruído no Discriminador (mentir a classificação 5% das vezes) para manter o equilíbrio, reduzindo as épocas para evitar *Overtraining*.
+* **Status Numérico:** Sucesso matemático absoluto. As métricas ficaram balanceadas (`D(x): 0.765` / `D(G(z)): 0.100`).
+* **Veredito Visual:** Fracasso anatômico. Como o Discriminador tornou-se leniente (tolerante a erros devido ao ruído artificial), o Gerador perdeu o incentivo de refinar as imagens, gerando rostos borrados e sem *sharpness*.
+
+### Experimento 4: A Força Bruta - Gerador Peso-Pesado (150 Épocas)
+* **Hipótese:** Em vez de "amarrar" o Discriminador, decidimos "fortalecer" o Gerador. O número base de *Feature Maps* do Gerador saltou de 64 para 128.
+* **Status Numérico:** O Discriminador continuou severo (`D(x) > 0.84`), mas o Gerador manteve resistência (`D(G(z)) ~ 0.07`), garantindo o fluxo do gradiente.
+* **Veredito Visual:** Estado da arte local. O modelo foi capaz de gerar olhos bem definidos, cabelos sombreamentos detalhados e paletas de cores complexas.
+
+## 3. Conclusão Provisória e Passos Finais
+Restou comprovado matematicamente que a Assimetria de Tarefas em GANs favorece o classificador. A melhor abordagem não é mentir para a rede (Label Flipping), mas sim fornecer superparametrização ao Gerador. O último teste será rodar uma versão purificada, por 280 épocas, incorporando espelhamento horizontal estocástico (*RandomHorizontalFlip*) para retardar a memorização do Discriminador.
