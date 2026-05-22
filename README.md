@@ -25,7 +25,7 @@ A estrutura deste repositório foi organizada para separar os experimentos explo
   * **`projeto-4-dcgan_versao4_150_epocas.ipynb`** **[CÓDIGO ATUAL]**: O Gerador "Peso-Pesado". A rede geradora teve seus mapas de características dobrados (128 features), conseguindo competir visualmente com o Discriminador e gerando resultados de alta fidelidade anatômica.
 
 * **`/relatorios/`**
-  * **`RELATORIO_PROVISORIO.md`** 📄: Documento detalhando a análise de cada iteração, por que certos modelos colapsaram e as justificativas teóricas por trás das mudanças arquiteturais.
+  * **`RELATORIO_PROVISORIO.md`**: Documento detalhando a análise de cada iteração, por que certos modelos colapsaram e as justificativas teóricas por trás das mudanças arquiteturais.
 
 ---
 
