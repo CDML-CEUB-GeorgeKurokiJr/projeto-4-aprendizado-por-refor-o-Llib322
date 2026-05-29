@@ -1,4 +1,4 @@
-# Projeto 4: Deep Convolutional Generative Adversarial Networks (DCGAN)
+# Projeto 4: Deep Convolutional Generative Adversarial Networks (DCGAN) e SN-GAN
 **Autor:** João Gabriel Pereira de Pádua  
 **Instituição:** Centro Universitário de Brasília (UniCEUB)  
 **Avaliador:** Prof. George Hideyuki Kuroki Júnior  
@@ -6,30 +6,42 @@
 ---
 
 ## Objetivo do Projeto
-Este repositório documenta a construção, treinamento e otimização de uma Rede Adversária Generativa Profunda (DCGAN) focada na geração de rostos de personagens de anime (Anime Faces). 
+Este repositório documenta a construção, treinamento e otimização de Redes Adversárias Generativas Profundas focadas na síntese de rostos de personagens de anime. 
 
-O desafio central deste projeto não é apenas escrever a topologia da rede, mas manter a **Homeostase do Treinamento** no Jogo Minimax entre o Gerador (Falsificador) e o Discriminador (Perito). Ao longo da pesquisa empírica, lidamos com desafios matemáticos clássicos como *Mode Collapse* (Colapso de Modo) e Fuga de Gradiente, aplicando e contrastando técnicas de engenharia como *Label Smoothing*, *Label Flipping* (Instance Noise) e a Superparametrização do Gerador.
+Nesta segunda fase da pesquisa empírica, o projeto evoluiu da simples calibragem de hiperparâmetros (como *Label Smoothing* e *Instance Noise*) para intervenções arquiteturais diretas e testes de engenharia de dados. O objetivo principal foi atingir o **Equilíbrio de Nash** no jogo Minimax, evitando os clássicos problemas de *Mode Collapse* e *Vanishing Gradient* (Fuga de Gradiente) que ocorrem quando o Discriminador supera o Gerador prematuramente.
 
 ---
 
-## Guia de Navegação do Repositório (Entrega Provisória)
+## Hipóteses Testadas e Resultados Obtidos
 
-A estrutura deste repositório foi organizada para separar os experimentos exploratórios do código otimizado.
+Durante esta etapa provisória, três grandes teses foram colocadas à prova para tentar estabilizar o treinamento:
+
+1. **Curadoria de Dados e Redução de Domínio (A Tese dos Datasets Curados):** * **Hipótese:** Limitar o dataset a nichos específicos (ex: apenas personagens loiros, totalizando 700 imagens; ou cabelos pretos, 15.000 imagens) facilitaria o aprendizado do Gerador.
+   * **Resultado:** Falha por *Data Starvation* (Inanição de Dados). Em volumes de dados tão baixos, o Discriminador decorou os pixels reais (*Overfitting* extremo) logo nas primeiras épocas, quebrando a homeostase e destruindo os gradientes do Gerador. A conclusão empírica foi o retorno mandatório ao dataset in-the-wild massivo (63.000 imagens).
+2. **Self-Attention GAN (A Tese da Visão Global):**
+   * **Hipótese:** Injetar módulos de Atenção Própria nas camadas finais para forçar a simetria anatômica global (ex: evitar olhos de cores diferentes).
+   * **Resultado:** Desestabilização do treinamento e retorno da Fuga de Gradiente nesta resolução específica (64x64). 
+3. **Spectral Normalization (A Tese Vencedora - SN-GAN):**
+   * **Hipótese:** Substituir o `BatchNorm2d` do Discriminador pela técnica de Normalização Espectral, limitando matematicamente a constante de Lipschitz da rede para impedir que o "Policial" atinja 100% de confiança rápido demais.
+   * **Resultado:** **Sucesso Absoluto.** O modelo atingiu o Equilíbrio de Nash perfeito (probabilidades estabilizadas na casa dos ~0.5 para ambas as redes). O Gerador foi capaz de aprender de forma constante durante 150 épocas sem sofrer colapso estético.
+
+---
+
+## Guia de Navegação do Repositório (2ª Entrega Provisória)
+
+A estrutura de diretórios foi expandida para acomodar as novas frentes de pesquisa e preservar o histórico do projeto.
 
 * **`/notebooks/`**
-  * **`notebooks_de_testes/`**: Contém o histórico de experimentação. Devido ao tamanho das imagens geradas em alta resolução (salvas nos outputs), os arquivos brutos desta pasta possuem entre 29MB e 51MB.
-    * `projeto-4-dcgan_versao1.ipynb`: Primeiro protótipo da arquitetura.
-    * `projeto-4-dcgan_versao1_100_epocas.ipynb`: Teste inicial de resistência do Gerador.
-    * `projeto-4-dcgan_versao2_350_epocas.ipynb`: Análise do erro de *Overtraining* e colapso pelo mau uso do Label Smoothing duplo.
-    * `projeto-4-dcgan_versao3_75_epocas.ipynb`: Aplicação de *Label Flipping* (5% de entropia). Atingiu equilíbrio numérico, mas resultou em perda de nitidez visual.
-  
-  * **`projeto-4-dcgan_versao4_150_epocas.ipynb`** **[CÓDIGO ATUAL]**: O Gerador "Peso-Pesado". A rede geradora teve seus mapas de características dobrados (128 features), conseguindo competir visualmente com um Discriminador rigoroso (1.0 e 0.0 absolutos) e gerando resultados de alta fidelidade anatômica.
-    * **Aviso de Infraestrutura:** Os outputs de imagens deste caderno final foram intencionalmente purgados (Clear Outputs). A geração de 150 tensores de alta resolução inflou o JSON do arquivo para 51 MB, corrompendo a estrutura nativa de visualização nas IDEs web. Os logs de época e as amostras visuais foram documentados fisicamente no Relatório.
+  * **`notebooks_de_testes/`**: Histórico da primeira fase (Testes de Label Smoothing, Fliping, etc).
+  * **`notebooks_de_testes_cabelos_pretos/`**: Contém os cadernos utilizados para testar a hipótese de redução de domínio. Com cabelos pretos.
+  * **`notebooks_de_testes_loiros/`**: Contém os cadernos utilizados para testar a hipótese de redução de domínio. Com cabelos loiros.
+  * **`projeto-4-dcgan-v7-spectral-normalization-150-epochs.ipynb`** **[CÓDIGO ATUAL VENCEDOR]**: Implementação final desta entrega. Utiliza o dataset completo de 63.000 imagens e a arquitetura SN-GAN (Spectral Normalization) no Discriminador para estabilização forçada dos gradientes.
 
 * **`/relatorios/`**
-  * **`RELATORIO_PROVISORIO.md`**: Documento detalhando a análise de cada iteração, os motivos do colapso de certos modelos, as ilusões numéricas do treinamento adversarial e as justificativas teóricas por trás da superparametrização final.
+  * **`relatorios_antigos/`**: Armazena os relatórios da primeira entrega provisória para fins de documentação de progresso.
+  * **`RELATORIO_PROVISORIO_V2.md`**: Documento atual detalhando a análise técnica dos novos logs, a matemática por trás da Normalização Espectral e as lições aprendidas com os testes de curadoria de dados.
 
 ---
 
 ## Status Atual e Próximos Passos
-Esta é uma entrega provisória. O experimento provou que um **Gerador Superparametrizado** enfrentando um Discriminador estrito gera os melhores resultados visuais. A versão final e definitiva (treinada por 280 épocas com *Data Augmentation* Simétrico) está atualmente em processamento para explorar o limite computacional do hardware e será anexada em breve para a conclusão da disciplina.
+Esta é a segunda entrega provisória. O modelo atual (SN-GAN) provou ser a arquitetura mais resiliente, sustentando o treinamento saudável ao longo das 150 épocas. Os próximos passos antes da entrega final incluirão o refinamento estético destas imagens geradas sob a proteção da Normalização Espectral e a compilação das métricas finais de avaliação da disciplina.
